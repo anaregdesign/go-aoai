@@ -1,4 +1,4 @@
-package goaoai
+package model
 
 // {
 //  "prompt": "Negate the following sentence.The price for bubblegum increased on thursday.\n\n Negated Sentence:",
