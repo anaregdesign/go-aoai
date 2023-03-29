@@ -1,10 +1,10 @@
-package goaoai
+package aoai
 
 import (
+	m "aoai/model"
 	"bytes"
 	"encoding/json"
 	"fmt"
-	m "goaoai/model"
 	"io"
 	"net/http"
 )

@@ -1,9 +1,9 @@
 package main
 
 import (
+	"aoai"
 	"encoding/json"
 	"fmt"
-	"goaoai"
 
 	"os"
 )
@@ -14,7 +14,7 @@ func main() {
 	apiVersion := "2023-03-15-preview"
 	accessToken := os.Getenv("AZURE_OPENAI_API_KEY")
 
-	client := goaoai.New(resourceName, deploymentName, apiVersion, accessToken)
+	client := aoai.New(resourceName, deploymentName, apiVersion, accessToken)
 
 	result, err := client.Completion([]string{"I have a dream that one day on"}, 50)
 	if err != nil {
