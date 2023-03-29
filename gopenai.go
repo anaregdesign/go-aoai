@@ -56,7 +56,7 @@ func (a *AzureOpenAI) header() http.Header {
 	return header
 }
 
-func (a *AzureOpenAI) Completion(prompt string, maxTokens int) (*m.CompletionResponse, error) {
+func (a *AzureOpenAI) Completion(prompt []string, maxTokens int) (*m.CompletionResponse, error) {
 	endpoint := fmt.Sprintf("%s/completions?api-version=%s", a.endpoint(), a.apiVersion)
 
 	completionRequest := m.CompletionRequest{

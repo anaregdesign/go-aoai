@@ -15,7 +15,11 @@ func main() {
 
 	client := goaoai.New(resourceName, deploymentName, apiVersion, accessToken)
 
-	result, _ := client.Completion("I have a dream that one day on", 50)
+	result, err := client.Completion([]string{"I have a dream that one day on"}, 50)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	if jsonString, err := json.MarshalIndent(result, "", "\t"); err == nil {
 		fmt.Println(string(jsonString))
 	}
