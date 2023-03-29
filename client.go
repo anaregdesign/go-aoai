@@ -88,3 +88,32 @@ func (a *AzureOpenAI) Completion(ctx context.Context, completionRequest Completi
 		return &completionResponse, nil
 	}
 }
+
+func (a *AzureOpenAI) Embedding(ctx context.Context, embeddingRequest EmbeddingRequest) (*EmbeddingResponse, error) {
+	endpoint := fmt.Sprintf("%s/embeddings?api-version=%s", a.endpoint(), a.apiVersion)
+
+	requestBody, _ := json.Marshal(embeddingRequest)
+	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	request.Header = a.header()
+
+	response, err := a.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	responseBody, _ := io.ReadAll(response.Body)
+	if response.StatusCode != 200 {
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
+			return nil, err
+		}
+		return nil, &errorResponse.Error
+	} else {
+		var embeddingResponse EmbeddingResponse
+		if err := json.Unmarshal(responseBody, &embeddingResponse); err != nil {
+			return nil, err
+		}
+		return &embeddingResponse, nil
+	}
+}
