@@ -2,6 +2,7 @@ package main
 
 import (
 	"aoai"
+	"context"
 	"encoding/json"
 	"fmt"
 
@@ -9,6 +10,8 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+
 	resourceName := "example-aoai-02"
 	deploymentName := "gpt-35-turbo-0301"
 	apiVersion := "2023-03-15-preview"
@@ -16,12 +19,18 @@ func main() {
 
 	client := aoai.New(resourceName, deploymentName, apiVersion, accessToken)
 
-	result, err := client.Completion([]string{"I have a dream that one day on"}, 50)
+	request := aoai.CompletionRequest{
+		Prompts:   []string{"I have a dream that one day on"},
+		MaxTokens: 100,
+		Stream:    false,
+	}
+
+	response, err := client.Completion(ctx, request)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
-	if jsonString, err := json.MarshalIndent(result, "", "\t"); err == nil {
+	if jsonString, err := json.MarshalIndent(response, "", "\t"); err == nil {
 		fmt.Println(string(jsonString))
 	}
 }
