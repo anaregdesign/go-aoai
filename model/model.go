@@ -272,24 +272,6 @@ type EmbeddingRequest struct {
 	AdditionalProp1 map[string]interface{} `json:"additionalProp1,omitempty"`
 }
 
-// {
-//  "object": "string",
-//  "model": "string",
-//  "data": [
-//    {
-//      "index": 0,
-//      "object": "string",
-//      "embedding": [
-//        0
-//      ]
-//    }
-//  ],
-//  "usage": {
-//    "prompt_tokens": 0,
-//    "total_tokens": 0
-//  }
-//}
-
 type EmbeddingResponse struct {
 	// object:
 	//   type: string
@@ -304,8 +286,8 @@ type EmbeddingResponse struct {
 	Data []EmbeddingData `json:"data,omitempty"`
 
 	// usage:
-	//   type: EmbeddingUsage
-	Usage EmbeddingUsage `json:"usage,omitempty"`
+	//   type: Usage
+	Usage Usage `json:"usage,omitempty"`
 }
 
 type EmbeddingData struct {
@@ -324,79 +306,197 @@ type EmbeddingData struct {
 	Embedding []float64 `json:"embedding,omitempty"`
 }
 
-type EmbeddingUsage struct {
+type Usage struct {
 	// prompt_tokens:
 	//   type: integer
 	PromptTokens int `json:"prompt_tokens,omitempty"`
+
+	// completion_tokens:
+	//   type: integer
+	CompletionTokens int `json:"completion_tokens,omitempty"`
 
 	// total_tokens:
 	//   type: integer
 	TotalTokens int `json:"total_tokens,omitempty"`
 }
 
-// {
-//  "model": "gpt-35-turbo",
-//  "messages": [
-//    {
-//      "role": "user",
-//      "content": "Hello!"
-//    }
-//  ]
-//}
-
-type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
 type ChatRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
-}
+	// messages:
+	//   description: The messages to generate chat completions for, in the chat format.
+	//   type: []ChatMessage
+	//   minItems: 1
+	//   items:
+	//     type: object
+	Messages []ChatMessage `json:"messages,omitempty"`
 
-// {
-//  "id": "chatcmpl-123",
-//  "object": "chat.completion",
-//  "created": 1677652288,
-//  "choices": [
-//    {
-//      "index": 0,
-//      "message": {
-//        "role": "assistant",
-//        "content": "\n\nHello there, how may I assist you today?"
-//      },
-//      "finish_reason": "stop"
-//    }
-//  ],
-//  "usage": {
-//    "prompt_tokens": 9,
-//    "completion_tokens": 12,
-//    "total_tokens": 21
-//  }
-//}
+	// temperature:
+	//   description: |-
+	//     What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random,
+	//    while lower values like 0.2 will make it more focused and deterministic.
+	//     We generally recommend altering this or `top_p` but not both.
+	//   type: number
+	//   minimum: 0
+	//   maximum: 2
+	//   default: 1
+	//   example: 1
+	//   nullable: true
+	Temperature float64 `json:"temperature,omitempty"`
+
+	// top_p:
+	//   description: |-
+	//     An alternative to sampling with temperature, called nucleus sampling, where the model considers the results
+	//    of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability
+	//    mass are considered.
+	//     We generally recommend altering this or `temperature` but not both.
+	//   type: number
+	//   minimum: 0
+	//   maximum: 1
+	//   default: 1
+	//   example: 1
+	//   nullable: true
+	TopP float64 `json:"top_p,omitempty"`
+
+	// 'n':
+	//   description: How many chat completion choices to generate for each input message.
+	//   type: integer
+	//   minimum: 1
+	//   maximum: 128
+	//   default: 1
+	//   example: 1
+	//   nullable: true
+	N int `json:"n,omitempty"`
+
+	// stream:
+	//   description:
+	//  	'If set, partial message deltas will be sent, like in ChatGPT. Tokens will be sent as data-only server-sent
+	// 		events as they become available, with the stream terminated by a `data: [DONE]` message.'
+	//   type: boolean
+	//   nullable: true
+	//   default: false
+	Stream bool `json:"stream,omitempty"`
+
+	// stop:
+	//   description: Up to 4 sequences where the API will stop generating further tokens.
+	//   oneOf:
+	//     - type: string
+	//       nullable: true
+	//     - type: array
+	//       items:
+	//         type: string
+	//         nullable: false
+	//       minItems: 1
+	//       maxItems: 4
+	//       description: Array minimum size of 1 and maximum of 4
+	//   default: null
+	Stop []string `json:"stop,omitempty"`
+
+	// max_tokens:
+	//   description:
+	//  	The maximum number of tokens allowed for the generated answer. By default, the number of tokens the model
+	// 		can return will be (4096 - prompt tokens).
+	//   type: integer
+	//   default: inf
+	MaxTokens int `json:"max_tokens,omitempty"`
+
+	// presence_penalty:
+	//   description:
+	//  	Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text
+	// 		so far, increasing the model's likelihood to talk about new topics.
+	//   type: number
+	//   default: 0
+	//   minimum: -2
+	//   maximum: 2
+	PresencePenalty float64 `json:"presence_penalty,omitempty"`
+
+	// frequency_penalty:
+	//   description: Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+	//   type: number
+	//   default: 0
+	//   minimum: -2
+	//   maximum: 2
+	FrequencyPenalty float64 `json:"frequency_penalty,omitempty"`
+
+	// logit_bias:
+	//   description:
+	//  	Modify the likelihood of specified tokens appearing in the completion. Accepts a json object that maps
+	// 		tokens (specified by their token ID in the tokenizer) to an associated bias value from -100 to 100.
+	//		Mathematically, the bias is added to the logits generated by the model prior to sampling. The exact effect
+	//		will vary per model, but values between -1 and 1 should decrease or increase likelihood of selection; values
+	//		like -100 or 100 should result in a ban or exclusive selection of the relevant token.
+	//		like -100 or 100 should result in a ban or exclusive selection of the relevant token.
+	//   type: object
+	//   nullable: true
+	LogitBias map[string]float64 `json:"logit_bias,omitempty"`
+
+	// user:
+	//   description: A unique identifier representing your end-user, which can help Azure OpenAI to monitor and detect abuse.
+	//   type: string
+	//   example: user-1234
+	//   nullable: false
+	User string `json:"user,omitempty"`
+}
 
 type ChatResponse struct {
-	ID      string       `json:"id"`
-	Object  string       `json:"object"`
-	Created int          `json:"created"`
+	// id:
+	//   type: string
+	ID string `json:"id"`
+
+	// object:
+	//   type: string
+	Object string `json:"object"`
+
+	// created:
+	//   type: integer
+	//   format: unixtime
+	Created int `json:"created"`
+
+	// model:
+	//   type: string
+	Model string `json:"model"`
+
+	// choices:
+	//   type: []ChatChoice
 	Choices []ChatChoice `json:"choices"`
-	Usage   Usage        `json:"usage"`
+
+	// usage:
+	//   type: Usage
+	Usage Usage `json:"usage"`
 }
 
 type ChatChoice struct {
-	Index        int     `json:"index"`
-	Message      Message `json:"message"`
-	FinishReason string  `json:"finish_reason"`
+	// index:
+	//   type: integer
+	Index int `json:"index"`
+
+	// message:
+	//   type: ChatMessage
+	Message ChatMessage `json:"message"`
+
+	// finish_reason:
+	//   type: string
+	FinishReason string `json:"finish_reason"`
 }
 
-// {
-//  "error": {
-//    "code": "string",
-//    "message": "string",
-//    "param": "string",
-//    "type": "string"
-//  }
-//}
+type ChatMessage struct {
+	// role:
+	//   type: string
+	//   enum:
+	//     - system
+	//     - user
+	//     - assistant
+	//   description: The role of the author of this message.
+	Role string `json:"role"`
+
+	// content:
+	//   type: string
+	//   description: The contents of the message
+	Content string `json:"content"`
+
+	// name:
+	//   type: string
+	//   description: The name of the user in a multi-user chat
+	Name string `json:"name,omitempty"`
+}
 
 type Error struct {
 	Code    string `json:"code"`
