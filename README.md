@@ -1,4 +1,4 @@
-# Go Azure OpenAI
+# Go SDK for Azure OpenAI
 This package provides Go Client for [Azure OpenAI](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/)
 
 ## Install 
