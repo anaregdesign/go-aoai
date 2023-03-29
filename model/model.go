@@ -1,5 +1,7 @@
 package model
 
+import "encoding/json"
+
 // {
 //  "prompt": "Negate the following sentence.The price for bubblegum increased on thursday.\n\n Negated Sentence:",
 //  "max_tokens": 50
@@ -54,6 +56,11 @@ type Error struct {
 	Message string `json:"message"`
 	Param   string `json:"param"`
 	Type    string `json:"type"`
+}
+
+func (e *Error) Error() string {
+	m, _ := json.Marshal(e)
+	return string(m)
 }
 
 type ErrorResponse struct {
