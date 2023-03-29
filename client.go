@@ -1,16 +1,16 @@
-package goaoai
+package aoai
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
-	m "goaoai/model"
 	"io"
 	"net/http"
 )
 
 type AzureOpenAI struct {
-	client             *http.Client
+	httpClient         *http.Client
 	resourceName       string
 	deploymentName     string
 	apiVersion         string
@@ -20,7 +20,7 @@ type AzureOpenAI struct {
 
 func NewWithActiveDirectory(resourceName string, deploymentName string, apiVersion string, accessToken string) *AzureOpenAI {
 	return &AzureOpenAI{
-		client:             &http.Client{},
+		httpClient:         &http.Client{},
 		resourceName:       resourceName,
 		deploymentName:     deploymentName,
 		apiVersion:         apiVersion,
@@ -31,7 +31,7 @@ func NewWithActiveDirectory(resourceName string, deploymentName string, apiVersi
 
 func New(resourceName string, deploymentName string, apiVersion string, accessToken string) *AzureOpenAI {
 	return &AzureOpenAI{
-		client:             &http.Client{},
+		httpClient:         &http.Client{},
 		resourceName:       resourceName,
 		deploymentName:     deploymentName,
 		apiVersion:         apiVersion,
@@ -56,18 +56,18 @@ func (a *AzureOpenAI) header() http.Header {
 	return header
 }
 
-func (a *AzureOpenAI) Completion(prompt []string, maxTokens int) (*m.CompletionResponse, error) {
+func (a *AzureOpenAI) Completion(ctx context.Context, completionRequest CompletionRequest) (*CompletionResponse, error) {
+	if completionRequest.Stream {
+		return nil, fmt.Errorf("streaming is not supported. Try `CompletionStream` instead")
+	}
+
 	endpoint := fmt.Sprintf("%s/completions?api-version=%s", a.endpoint(), a.apiVersion)
 
-	completionRequest := m.CompletionRequest{
-		Prompt:    prompt,
-		MaxTokens: maxTokens,
-	}
 	requestBody, _ := json.Marshal(completionRequest)
-	request, _ := http.NewRequest("POST", endpoint, bytes.NewReader(requestBody))
+	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
 	request.Header = a.header()
 
-	response, err := a.client.Do(request)
+	response, err := a.httpClient.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -75,16 +75,45 @@ func (a *AzureOpenAI) Completion(prompt []string, maxTokens int) (*m.CompletionR
 
 	responseBody, _ := io.ReadAll(response.Body)
 	if response.StatusCode != 200 {
-		var errorResponse m.ErrorResponse
+		var errorResponse ErrorResponse
 		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
 			return nil, err
 		}
 		return nil, &errorResponse.Error
 	} else {
-		var completionResponse m.CompletionResponse
+		var completionResponse CompletionResponse
 		if err := json.Unmarshal(responseBody, &completionResponse); err != nil {
 			return nil, err
 		}
 		return &completionResponse, nil
+	}
+}
+
+func (a *AzureOpenAI) Embedding(ctx context.Context, embeddingRequest EmbeddingRequest) (*EmbeddingResponse, error) {
+	endpoint := fmt.Sprintf("%s/embeddings?api-version=%s", a.endpoint(), a.apiVersion)
+
+	requestBody, _ := json.Marshal(embeddingRequest)
+	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	request.Header = a.header()
+
+	response, err := a.httpClient.Do(request)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	responseBody, _ := io.ReadAll(response.Body)
+	if response.StatusCode != 200 {
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
+			return nil, err
+		}
+		return nil, &errorResponse.Error
+	} else {
+		var embeddingResponse EmbeddingResponse
+		if err := json.Unmarshal(responseBody, &embeddingResponse); err != nil {
+			return nil, err
+		}
+		return &embeddingResponse, nil
 	}
 }

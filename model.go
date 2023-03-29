@@ -1,4 +1,4 @@
-package model
+package aoai
 
 import "encoding/json"
 
@@ -19,7 +19,7 @@ type CompletionRequest struct {
 	//         example: This is a test.
 	//         nullable: false
 	//       description: Array size minimum of 1 and maximum of 2048
-	Prompt []string `json:"prompt"`
+	Prompts []string `json:"prompt"`
 
 	// max_tokens:
 	//   description: The token count of your prompt plus max_tokens cannot exceed the model's context length. Most models have a context length of 2048 tokens (except for the newest models, which support 4096). Has minimum of 0.
