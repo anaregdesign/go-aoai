@@ -118,8 +118,12 @@ func (a *AzureOpenAI) Embedding(ctx context.Context, embeddingRequest EmbeddingR
 	}
 }
 
-func (a *AzureOpenAI) Chat(ctx context.Context, chatRequest ChatRequest) (*ChatResponse, error) {
-	endpoint := fmt.Sprintf("%s/chat/completion?api-version=%s", a.endpoint(), a.apiVersion)
+func (a *AzureOpenAI) ChatCompletion(ctx context.Context, chatRequest ChatRequest) (*ChatResponse, error) {
+	if chatRequest.Stream {
+		return nil, fmt.Errorf("streaming is not supported. Try `ChatCompletionStream` instead")
+	}
+
+	endpoint := fmt.Sprintf("%s/chat/completions?api-version=%s", a.endpoint(), a.apiVersion)
 
 	requestBody, _ := json.Marshal(chatRequest)
 	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
