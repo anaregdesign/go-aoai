@@ -227,20 +227,49 @@ type Logprobs struct {
 	TextOffset []int `json:"text_offset,omitempty"`
 }
 
-// {
-//  "input": "This is a test.",
-//  "user": "string",
-//  "input_type": "query",
-//  "model": "string",
-//  "additionalProp1": {}
-//}
-
 type EmbeddingRequest struct {
-	Input      string                 `json:"input"`
-	User       string                 `json:"user"`
-	InputType  string                 `json:"input_type"`
-	Model      string                 `json:"model"`
-	Additional map[string]interface{} `json:"additionalProp1"`
+	// input:
+	//   description: |-
+	//    Input text to get embeddings for, encoded as a string. To get embeddings for multiple inputs in a single
+	//    request, pass an array of strings. Each input must not exceed 2048 tokens in length.
+	//    Unless you are embedding code, we suggest replacing newlines (\n) in your input with a single space, as we
+	//    have observed inferior results when newlines are present.
+	//   oneOf:
+	//     - type: string
+	//       default: ''
+	//       example: This is a test.
+	//       nullable: true
+	//     - type: array
+	//       minItems: 1
+	//       maxItems: 2048
+	//       items:
+	//         type: string
+	//         minLength: 1
+	//         example: This is a test.
+	//         nullable: false
+	Input []string `json:"input,omitempty"`
+
+	// user:
+	//   description: A unique identifier representing your end-user, which can help monitoring and detecting abuse.
+	//   type: string
+	//   nullable: false
+	User string `json:"user,omitempty"`
+
+	// input_type:
+	//   description: input type of embedding search to use
+	//   type: string
+	//   example: query
+	InputType string `json:"input_type,omitempty"`
+
+	// model:
+	//   type: string
+	//   description:
+	//  	ID of the model to use. You can use the Models_List operation to see all of your available models, or see
+	// 		our Models_Get overview for descriptions of them.
+	//   nullable: false
+	Model string `json:"model,omitempty"`
+
+	AdditionalProp1 map[string]interface{} `json:"additionalProp1,omitempty"`
 }
 
 // {
@@ -261,23 +290,48 @@ type EmbeddingRequest struct {
 //  }
 //}
 
-type Data struct {
-	Index     int     `json:"index"`
-	Object    string  `json:"object"`
-	Embedding []int64 `json:"embedding"`
-}
-
-type Usage struct {
-	CompletionTokens int `json:"completion_tokens"`
-	PromptTokens     int `json:"prompt_tokens"`
-	TotalTokens      int `json:"total_tokens"`
-}
-
 type EmbeddingResponse struct {
-	Object string `json:"object"`
-	Model  string `json:"model"`
-	Data   []Data `json:"data"`
-	Usage  Usage  `json:"usage"`
+	// object:
+	//   type: string
+	Object string `json:"object,omitempty"`
+
+	// model:
+	//   type: string
+	Model string `json:"model,omitempty"`
+
+	// data:
+	//   type: []Data
+	Data []EmbeddingData `json:"data,omitempty"`
+
+	// usage:
+	//   type: EmbeddingUsage
+	Usage EmbeddingUsage `json:"usage,omitempty"`
+}
+
+type EmbeddingData struct {
+	// index:
+	//   type: integer
+	Index int `json:"index,omitempty"`
+
+	// object:
+	//   type: string
+	Object string `json:"object,omitempty"`
+
+	// embedding:
+	//   type: array
+	//   items:
+	//     type: number
+	Embedding []float64 `json:"embedding,omitempty"`
+}
+
+type EmbeddingUsage struct {
+	// prompt_tokens:
+	//   type: integer
+	PromptTokens int `json:"prompt_tokens,omitempty"`
+
+	// total_tokens:
+	//   type: integer
+	TotalTokens int `json:"total_tokens,omitempty"`
 }
 
 // {
@@ -321,18 +375,18 @@ type ChatRequest struct {
 //  }
 //}
 
-type ChatChoice struct {
-	Index        int     `json:"index"`
-	Message      Message `json:"message"`
-	FinishReason string  `json:"finish_reason"`
-}
-
 type ChatResponse struct {
 	ID      string       `json:"id"`
 	Object  string       `json:"object"`
 	Created int          `json:"created"`
 	Choices []ChatChoice `json:"choices"`
 	Usage   Usage        `json:"usage"`
+}
+
+type ChatChoice struct {
+	Index        int     `json:"index"`
+	Message      Message `json:"message"`
+	FinishReason string  `json:"finish_reason"`
 }
 
 // {
