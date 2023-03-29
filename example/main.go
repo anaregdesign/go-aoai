@@ -1,10 +1,10 @@
 package main
 
 import (
-	"aoai"
 	"context"
 	"encoding/json"
 	"fmt"
+	aoai "github.com/piroyoung/go-aoai"
 
 	"os"
 )
