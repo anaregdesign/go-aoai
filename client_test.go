@@ -3,6 +3,7 @@ package aoai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -133,7 +134,7 @@ func TestAzureOpenAI_Completion(t *testing.T) {
 				return
 			}
 			if jsonString, _ := json.MarshalIndent(got, "", "\t"); jsonString != nil {
-				fmt.Println(string(jsonString))
+				t.Log(string(jsonString))
 			}
 		})
 	}
@@ -194,7 +195,7 @@ func TestAzureOpenAI_Embedding(t *testing.T) {
 				return
 			}
 			if jsonString, _ := json.MarshalIndent(got, "", "\t"); jsonString != nil {
-				fmt.Println(string(jsonString))
+				t.Log(string(jsonString))
 			}
 		})
 	}
@@ -302,6 +303,91 @@ func TestAzureOpenAI_header(t *testing.T) {
 			}
 			if got := a.header(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("header() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAzureOpenAI_CompletionStream(t *testing.T) {
+	e := errors.New("dummy error")
+
+	type fields struct {
+		httpClient         *http.Client
+		resourceName       string
+		deploymentName     string
+		apiVersion         string
+		useActiveDirectory bool
+		accessToken        string
+	}
+	type args struct {
+		ctx               context.Context
+		completionRequest CompletionRequest
+		consumer          func(completionResponse CompletionResponse) error
+	}
+
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "validCase",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "gpt-35-turbo-0301",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: false,
+			},
+			args: args{
+				ctx: context.Background(),
+				completionRequest: CompletionRequest{
+					Prompts:   []string{"I have a dream that one day on"},
+					MaxTokens: 100,
+					Stream:    true,
+				},
+				consumer: func(completionResponse CompletionResponse) error {
+					t.Log(completionResponse.Choices[0].Text)
+					return nil
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalidCase",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "gpt-35-turbo-0301",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: false,
+			},
+			args: args{
+				ctx: context.Background(),
+				completionRequest: CompletionRequest{
+					Prompts:   []string{"I have a dream that one day on"},
+					MaxTokens: 100,
+					Stream:    true,
+				},
+				consumer: func(completionResponse CompletionResponse) error {
+					return e
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &AzureOpenAI{
+				httpClient:         tt.fields.httpClient,
+				resourceName:       tt.fields.resourceName,
+				deploymentName:     tt.fields.deploymentName,
+				apiVersion:         tt.fields.apiVersion,
+				useActiveDirectory: tt.fields.useActiveDirectory,
+				accessToken:        tt.fields.accessToken,
+			}
+			if err := a.CompletionStream(tt.args.ctx, tt.args.completionRequest, tt.args.consumer); (err != nil) != tt.wantErr {
+				t.Errorf("CompletionStream() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

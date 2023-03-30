@@ -1,12 +1,14 @@
 package aoai
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 type AzureOpenAI struct {
@@ -148,5 +150,62 @@ func (a *AzureOpenAI) ChatCompletion(ctx context.Context, chatRequest ChatReques
 			return nil, err
 		}
 		return &chatResponse, nil
+	}
+}
+
+// CompletionStream
+// https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference
+// Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become
+// available, with the stream terminated by a `data: [DONE]` message.
+func (a *AzureOpenAI) CompletionStream(ctx context.Context, completionRequest CompletionRequest, consumer func(completionResponse CompletionResponse) error) error {
+	if !completionRequest.Stream {
+		return fmt.Errorf("streaming is not enabled. Try `Completion` instead")
+	}
+
+	endpoint := fmt.Sprintf("%s/completions?api-version=%s", a.endpoint(), a.apiVersion)
+
+	requestBody, _ := json.Marshal(completionRequest)
+	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	request.Header = a.header()
+
+	response, err := a.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	reader := bufio.NewReader(response.Body)
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			m, err := reader.ReadString('\n')
+			if err == io.EOF {
+				return nil
+			} else if err != nil {
+				return err
+			}
+
+			// remove prefix 'data: ' and suffix '\n'
+			m = strings.TrimPrefix(m, "data: ")
+			m = strings.TrimSuffix(m, "\n")
+			if m == "" {
+				// stream is delimited by '\n\n'
+				continue
+			} else if m == "[DONE]" {
+				// stream is terminated by a `data: [DONE]` message
+				return nil
+			}
+
+			var completionResponse CompletionResponse
+			if err := json.Unmarshal([]byte(m), &completionResponse); err != nil {
+				return err
+			}
+			if err := consumer(completionResponse); err != nil {
+				return err
+			}
+		}
 	}
 }
