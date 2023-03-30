@@ -2,6 +2,7 @@ package aoai
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -48,6 +49,7 @@ func TestAzureOpenAI_ChatCompletion(t *testing.T) {
 							Content: "What is Azure OpenAI?",
 						},
 					},
+					MaxTokens: 100,
 				},
 			},
 			wantErr: false,
@@ -68,7 +70,9 @@ func TestAzureOpenAI_ChatCompletion(t *testing.T) {
 				t.Errorf("Chat() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			fmt.Println(got)
+			if jsonString, _ := json.MarshalIndent(got, "", "\t"); jsonString != nil {
+				fmt.Println(string(jsonString))
+			}
 		})
 	}
 }
@@ -93,7 +97,25 @@ func TestAzureOpenAI_Completion(t *testing.T) {
 		want    *CompletionResponse
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "validCase",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "gpt-35-turbo-0301",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: false,
+				accessToken:        os.Getenv("AZURE_OPENAI_API_KEY"),
+			},
+			args: args{
+				ctx: context.Background(),
+				completionRequest: CompletionRequest{
+					Prompts:   []string{"I have a dream that one day on"},
+					MaxTokens: 100,
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -110,8 +132,8 @@ func TestAzureOpenAI_Completion(t *testing.T) {
 				t.Errorf("Completion() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Completion() got = %v, want %v", got, tt.want)
+			if jsonString, _ := json.MarshalIndent(got, "", "\t"); jsonString != nil {
+				fmt.Println(string(jsonString))
 			}
 		})
 	}
@@ -137,7 +159,24 @@ func TestAzureOpenAI_Embedding(t *testing.T) {
 		want    *EmbeddingResponse
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "validCase",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "text-embedding-ada-002",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: false,
+				accessToken:        os.Getenv("AZURE_OPENAI_API_KEY"),
+			},
+			args: args{
+				ctx: context.Background(),
+				embeddingRequest: EmbeddingRequest{
+					Inputs: []string{"I love both Microsoft and OpenSource."},
+				},
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -154,8 +193,8 @@ func TestAzureOpenAI_Embedding(t *testing.T) {
 				t.Errorf("Embedding() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Embedding() got = %v, want %v", got, tt.want)
+			if jsonString, _ := json.MarshalIndent(got, "", "\t"); jsonString != nil {
+				fmt.Println(string(jsonString))
 			}
 		})
 	}
@@ -175,7 +214,18 @@ func TestAzureOpenAI_endpoint(t *testing.T) {
 		fields fields
 		want   string
 	}{
-		// TODO: Add test cases.
+		{
+			name: "validCase",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "gpt-35-turbo-0301",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: false,
+				accessToken:        "dummy",
+			},
+			want: "https://example-aoai-02.openai.azure.com/openai/deployments/gpt-35-turbo-0301",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -195,6 +245,10 @@ func TestAzureOpenAI_endpoint(t *testing.T) {
 }
 
 func TestAzureOpenAI_header(t *testing.T) {
+	want := http.Header{}
+	want.Add("Content-Type", "application/json")
+	want.Add("api-key", "some API key")
+
 	type fields struct {
 		httpClient         *http.Client
 		resourceName       string
@@ -208,7 +262,33 @@ func TestAzureOpenAI_header(t *testing.T) {
 		fields fields
 		want   http.Header
 	}{
-		// TODO: Add test cases.
+		{
+			name: "withAPIKey",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "gpt-35-turbo-0301",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: false,
+				accessToken:        "some API key",
+			},
+			want: want,
+		},
+		{
+			name: "withAccessToken",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "gpt-35-turbo-0301",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: true,
+				accessToken:        "some access token",
+			},
+			want: http.Header{
+				"Content-Type":  []string{"application/json"},
+				"Authorization": []string{"Bearer some access token"},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -222,52 +302,6 @@ func TestAzureOpenAI_header(t *testing.T) {
 			}
 			if got := a.header(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("header() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNew(t *testing.T) {
-	type args struct {
-		resourceName   string
-		deploymentName string
-		apiVersion     string
-		accessToken    string
-	}
-	tests := []struct {
-		name string
-		args args
-		want *AzureOpenAI
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := New(tt.args.resourceName, tt.args.deploymentName, tt.args.apiVersion, tt.args.accessToken); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNewWithActiveDirectory(t *testing.T) {
-	type args struct {
-		resourceName   string
-		deploymentName string
-		apiVersion     string
-		accessToken    string
-	}
-	tests := []struct {
-		name string
-		args args
-		want *AzureOpenAI
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := NewWithActiveDirectory(tt.args.resourceName, tt.args.deploymentName, tt.args.apiVersion, tt.args.accessToken); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewWithActiveDirectory() = %v, want %v", got, tt.want)
 			}
 		})
 	}
