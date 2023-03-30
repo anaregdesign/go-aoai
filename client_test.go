@@ -3,6 +3,7 @@ package aoai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -308,6 +309,8 @@ func TestAzureOpenAI_header(t *testing.T) {
 }
 
 func TestAzureOpenAI_CompletionStream(t *testing.T) {
+	e := errors.New("dummy error")
+
 	type fields struct {
 		httpClient         *http.Client
 		resourceName       string
@@ -350,6 +353,27 @@ func TestAzureOpenAI_CompletionStream(t *testing.T) {
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "invalidCase",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "gpt-35-turbo-0301",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: false,
+			},
+			args: args{
+				ctx: context.Background(),
+				completionRequest: CompletionRequest{
+					Prompts:   []string{"I have a dream that one day on"},
+					MaxTokens: 100,
+					Stream:    true,
+				},
+				consumer: func(completionResponse CompletionResponse) error {
+					return e
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
