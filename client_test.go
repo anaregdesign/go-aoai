@@ -339,12 +339,13 @@ func TestAzureOpenAI_CompletionStream(t *testing.T) {
 				deploymentName:     "gpt-35-turbo-0301",
 				apiVersion:         "2023-03-15-preview",
 				useActiveDirectory: false,
+				accessToken:        os.Getenv("AZURE_OPENAI_API_KEY"),
 			},
 			args: args{
 				ctx: context.Background(),
 				completionRequest: CompletionRequest{
 					Prompts:   []string{"I have a dream that one day on"},
-					MaxTokens: 100,
+					MaxTokens: 20,
 					Stream:    true,
 				},
 				consumer: func(completionResponse CompletionResponse) error {
@@ -362,18 +363,44 @@ func TestAzureOpenAI_CompletionStream(t *testing.T) {
 				deploymentName:     "gpt-35-turbo-0301",
 				apiVersion:         "2023-03-15-preview",
 				useActiveDirectory: false,
+				accessToken:        os.Getenv("AZURE_OPENAI_API_KEY"),
 			},
 			args: args{
 				ctx: context.Background(),
 				completionRequest: CompletionRequest{
 					Prompts:   []string{"I have a dream that one day on"},
-					MaxTokens: 100,
+					MaxTokens: 20,
 					Stream:    true,
 				},
 				consumer: func(completionResponse CompletionResponse) error {
 					return e
 				},
 			},
+			wantErr: true,
+		},
+		{
+			name: "unauthorizedCase",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "gpt-35-turbo-0301",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: false,
+				accessToken:        "invalid API key",
+			},
+			args: args{
+				ctx: context.Background(),
+				completionRequest: CompletionRequest{
+					Prompts:   []string{"I have a dream that one day on"},
+					MaxTokens: 20,
+					Stream:    true,
+				},
+				consumer: func(completionResponse CompletionResponse) error {
+					t.Log(completionResponse.Choices[0].Text)
+					return nil
+				},
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
