@@ -306,3 +306,25 @@ func TestAzureOpenAI_header(t *testing.T) {
 		})
 	}
 }
+
+func TestAzureOpenAI_CompletionStream(t *testing.T) {
+	resourceName := "example-aoai-02"
+	deploymentName := "gpt-35-turbo-0301"
+	apiVersion := "2023-03-15-preview"
+	accessToken := os.Getenv("AZURE_OPENAI_API_KEY")
+
+	client := New(resourceName, deploymentName, apiVersion, accessToken)
+	ctx := context.Background()
+	request := CompletionRequest{
+		Prompts:   []string{"I love both Microsoft and OpenSource, because "},
+		MaxTokens: 100,
+		Stream:    true,
+	}
+	err := client.CompletionStream(ctx, request, func(res CompletionResponse) error {
+		fmt.Print(res.Choices[0].Text)
+		return nil
+	})
+	if err != nil {
+		t.Error(err)
+	}
+}

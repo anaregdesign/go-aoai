@@ -177,19 +177,22 @@ func (a *AzureOpenAI) CompletionStream(ctx context.Context, completionRequest Co
 	reader := bufio.NewReader(response.Body)
 	for {
 		m, err := reader.ReadString('\n')
-		if err != nil {
+		if err == io.EOF {
+			break
+		} else if err != nil {
 			return err
 		}
-		if m == "\n" {
-			// stream is delimited by '\n\n'
-			continue
-		} else if m == "data: [DONE]\n" {
-			// stream is terminated by a `data: [DONE]` message
-			break
-		}
+
 		// remove prefix 'data: ' and suffix '\n'
 		m = strings.TrimPrefix(m, "data: ")
 		m = strings.TrimSuffix(m, "\n")
+		if m == "" {
+			// stream is delimited by '\n\n'
+			continue
+		} else if m == "[DONE]" {
+			// stream is terminated by a `data: [DONE]` message
+			break
+		}
 
 		var completionResponse CompletionResponse
 		if err := json.Unmarshal([]byte(m), &completionResponse); err != nil {
