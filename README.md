@@ -1,8 +1,12 @@
 # Go SDK for Azure OpenAI
-This package provides Go Client for [Azure OpenAI](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/)
 
-## Install 
+This package provides Go Client
+for [Azure OpenAI](https://azure.microsoft.com/en-us/products/cognitive-services/openai-service/)
+
+## Install
+
 Just type this script on your project.
+
 ```shell
 $ go get github.com/piroyoung/go-aoai
 ```
@@ -67,7 +71,8 @@ Then we got belows.
 }
 ```
 
-## Global Parameters 
+## Global Parameters
+
 This SDK requires some parameters to identify your project and deployment.
 | name | description |
 | :--- | :--- |
@@ -77,14 +82,20 @@ This SDK requires some parameters to identify your project and deployment.
 | `accessToken` | Authentication key. We can use Azure Active Directory Authentication(TBD). |
 
 ### `resourceName`
+
 <img width="900" alt="resource_name" src="https://user-images.githubusercontent.com/6128022/228507736-f65f4a65-f1f2-4e34-b51c-22ef8e172948.png">
 
 ### `deploymentName`
+
 <img width="900" alt="deployment_name" src="https://user-images.githubusercontent.com/6128022/228508010-3b65aced-c7b6-4ba9-b5e5-9b9b93e22b58.png">
 
 ### `accessToken`
+
 <img width="900" alt="api_key" src="https://user-images.githubusercontent.com/6128022/228511558-3b42cf21-b5db-445a-9bfc-a672aac8a6f1.png">
 
 ## Request Parameters.
-Models of Request/Response body are defined in `model.go`, check [here](https://github.com/piroyoung/go-aoai/blob/main/model.go).
-And you can also see [Swagger API Reference](https://github.com/Azure/azure-rest-api-specs/blob/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2022-12-01/inference.json).
+
+Models of Request/Response body are defined in `model.go`,
+check [here](https://github.com/piroyoung/go-aoai/blob/main/model.go).
+And you can also
+see [Swagger API Reference](https://github.com/Azure/azure-rest-api-specs/blob/main/specification/cognitiveservices/data-plane/AzureOpenAI/inference/stable/2022-12-01/inference.json).
