@@ -174,6 +174,15 @@ func (a *AzureOpenAI) CompletionStream(ctx context.Context, completionRequest Co
 	}
 	defer response.Body.Close()
 
+	if response.StatusCode != 200 {
+		responseBody, _ := io.ReadAll(response.Body)
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
+			return err
+		}
+		return &errorResponse.Error
+	}
+
 	reader := bufio.NewReader(response.Body)
 	for {
 		select {
