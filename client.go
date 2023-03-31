@@ -218,3 +218,69 @@ func (a *AzureOpenAI) CompletionStream(ctx context.Context, completionRequest Co
 		}
 	}
 }
+
+// ChatCompletionStream
+// https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference
+// Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become
+// available, with the stream terminated by a `data: [DONE]` message.
+func (a *AzureOpenAI) ChatCompletionStream(ctx context.Context, chatRequest ChatRequest, consumer func(chatResponse ChatResponse) error) error {
+	if !chatRequest.Stream {
+		return fmt.Errorf("streaming is not enabled. Try `ChatCompletion` instead")
+	}
+	endpoint := fmt.Sprintf("%s/chat/completions?api-version=%s", a.endpoint(), a.apiVersion)
+
+	requestBody, _ := json.Marshal(chatRequest)
+	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	request.Header = a.header()
+
+	response, err := a.httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		responseBody, _ := io.ReadAll(response.Body)
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
+			return err
+		}
+		return &errorResponse.Error
+	}
+
+	reader := bufio.NewReader(response.Body)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			m, err := reader.ReadString('\n')
+			if err == io.EOF {
+				return nil
+			} else if err != nil {
+				return err
+			}
+
+			// remove prefix 'data: ' and suffix '\n'
+			m = strings.TrimPrefix(m, "data: ")
+			m = strings.TrimSuffix(m, "\n")
+			if m == "" {
+				// stream is delimited by '\n\n'
+				continue
+			} else if m == "[DONE]" {
+				// stream is terminated by a `data: [DONE]` message
+				return nil
+			}
+
+			var chatResponse ChatResponse
+			if err := json.Unmarshal([]byte(m), &chatResponse); err != nil {
+				return err
+			}
+			if err := consumer(chatResponse); err != nil {
+				return err
+			}
+		}
+	}
+}

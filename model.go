@@ -439,42 +439,65 @@ type ChatRequest struct {
 type ChatResponse struct {
 	// id:
 	//   type: string
-	ID string `json:"id"`
+	ID string `json:"id,omitempty"`
 
 	// object:
 	//   type: string
-	Object string `json:"object"`
+	Object string `json:"object,omitempty"`
 
 	// created:
 	//   type: integer
 	//   format: unixtime
-	Created int `json:"created"`
+	Created int `json:"created,omitempty"`
 
 	// model:
 	//   type: string
-	Model string `json:"model"`
+	Model string `json:"model,omitempty"`
 
 	// choices:
 	//   type: []ChatChoice
-	Choices []ChatChoice `json:"choices"`
+	Choices []ChatChoice `json:"choices,omitempty"`
 
 	// usage:
 	//   type: Usage
-	Usage Usage `json:"usage"`
+	Usage Usage `json:"usage,omitempty"`
 }
 
+// ChatChoice
+// Example of a Chunk response:
+//
+//	{
+//	 "id": "chatcmpl-6zzeMna3lgVJNguBvgncWuAcVL8f2",
+//	 "object": "chat.completion.chunk",
+//	 "created": 1680233010,
+//	 "model": "gpt-35-turbo",
+//	 "choices": [
+//	   {
+//	     "index": 0,
+//	     "finish_reason": null,
+//	     "delta": {
+//	       "content": "the"
+//	     }
+//	   }
+//	 ],
+//	 "usage": null
+//	}
 type ChatChoice struct {
 	// index:
 	//   type: integer
-	Index int `json:"index"`
+	Index int `json:"index,omitempty"`
 
 	// message:
 	//   type: ChatMessage
-	Message ChatMessage `json:"message"`
+	Message ChatMessage `json:"message,omitempty"`
+
+	// delta:
+	//   type: ChatMessage
+	Delta ChatMessage `json:"delta,omitempty"`
 
 	// finish_reason:
 	//   type: string
-	FinishReason string `json:"finish_reason"`
+	FinishReason string `json:"finish_reason,omitempty"`
 }
 
 type ChatMessage struct {
@@ -485,12 +508,12 @@ type ChatMessage struct {
 	//     - user
 	//     - assistant
 	//   description: The role of the author of this message.
-	Role string `json:"role"`
+	Role string `json:"role,omitempty"`
 
 	// content:
 	//   type: string
 	//   description: The contents of the message
-	Content string `json:"content"`
+	Content string `json:"content,omitempty"`
 
 	// name:
 	//   type: string
