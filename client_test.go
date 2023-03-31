@@ -419,3 +419,72 @@ func TestAzureOpenAI_CompletionStream(t *testing.T) {
 		})
 	}
 }
+
+func TestAzureOpenAI_ChatCompletionStream(t *testing.T) {
+	type fields struct {
+		httpClient         *http.Client
+		resourceName       string
+		deploymentName     string
+		apiVersion         string
+		useActiveDirectory bool
+		accessToken        string
+	}
+	type args struct {
+		ctx         context.Context
+		chatRequest ChatRequest
+		consumer    func(chatResponse ChatResponse) error
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "validCase",
+			fields: fields{
+				httpClient:         &http.Client{},
+				resourceName:       "example-aoai-02",
+				deploymentName:     "gpt-35-turbo-0301",
+				apiVersion:         "2023-03-15-preview",
+				useActiveDirectory: false,
+				accessToken:        os.Getenv("AZURE_OPENAI_API_KEY"),
+			},
+			args: args{
+				ctx: context.Background(),
+				chatRequest: ChatRequest{
+					Messages: []ChatMessage{
+						{
+							Role:    "user",
+							Content: "I have a dream that one day on",
+						},
+					},
+					MaxTokens: 10,
+					Stream:    true,
+				},
+				consumer: func(chatResponse ChatResponse) error {
+					//t.Log(chatResponse.Choices[0].Delta)
+					jsonString, _ := json.MarshalIndent(chatResponse, "", "\t")
+					t.Log(string(jsonString))
+					return nil
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			a := &AzureOpenAI{
+				httpClient:         tt.fields.httpClient,
+				resourceName:       tt.fields.resourceName,
+				deploymentName:     tt.fields.deploymentName,
+				apiVersion:         tt.fields.apiVersion,
+				useActiveDirectory: tt.fields.useActiveDirectory,
+				accessToken:        tt.fields.accessToken,
+			}
+			if err := a.ChatCompletionStream(tt.args.ctx, tt.args.chatRequest, tt.args.consumer); (err != nil) != tt.wantErr {
+				t.Errorf("ChatCompletionStream() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
