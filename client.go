@@ -82,136 +82,23 @@ func (a *AzureOpenAI) ChatCompletion(ctx context.Context, chatRequest ChatReques
 	return postJsonRequest[ChatRequest, ChatResponse](ctx, a.httpClient, endpoint, a.header(), chatRequest)
 }
 
-// CompletionStream
-// https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference
-// Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become
-// available, with the stream terminated by a `data: [DONE]` message.
 func (a *AzureOpenAI) CompletionStream(ctx context.Context, completionRequest CompletionRequest, consumer func(completionResponse CompletionResponse) error) error {
 	if !completionRequest.Stream {
 		return fmt.Errorf("streaming is not enabled. Try `Completion` instead")
 	}
 
 	endpoint := fmt.Sprintf("%s/completions?api-version=%s", a.endpoint(), a.apiVersion)
-
-	requestBody, _ := json.Marshal(completionRequest)
-	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
-	request.Header = a.header()
-
-	response, err := a.httpClient.Do(request)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != 200 {
-		responseBody, _ := io.ReadAll(response.Body)
-		var errorResponse ErrorResponse
-		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
-			return err
-		}
-		return &errorResponse.Error
-	}
-
-	reader := bufio.NewReader(response.Body)
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-			m, err := reader.ReadString('\n')
-			if err == io.EOF {
-				return nil
-			} else if err != nil {
-				return err
-			}
-
-			// remove prefix 'data: ' and suffix '\n'
-			m = strings.TrimPrefix(m, "data: ")
-			m = strings.TrimSuffix(m, "\n")
-			if m == "" {
-				// stream is delimited by '\n\n'
-				continue
-			} else if m == "[DONE]" {
-				// stream is terminated by a `data: [DONE]` message
-				return nil
-			}
-
-			var completionResponse CompletionResponse
-			if err := json.Unmarshal([]byte(m), &completionResponse); err != nil {
-				return err
-			}
-			if err := consumer(completionResponse); err != nil {
-				return err
-			}
-		}
-	}
+	return postJsonRequestStream[CompletionRequest, CompletionResponse](ctx, a.httpClient, endpoint, a.header(), completionRequest, consumer)
 }
 
 // ChatCompletionStream
-// https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference
-// Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become
-// available, with the stream terminated by a `data: [DONE]` message.
+
 func (a *AzureOpenAI) ChatCompletionStream(ctx context.Context, chatRequest ChatRequest, consumer func(chatResponse ChatResponse) error) error {
 	if !chatRequest.Stream {
 		return fmt.Errorf("streaming is not enabled. Try `ChatCompletion` instead")
 	}
 	endpoint := fmt.Sprintf("%s/chat/completions?api-version=%s", a.endpoint(), a.apiVersion)
-
-	requestBody, _ := json.Marshal(chatRequest)
-	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
-	request.Header = a.header()
-
-	response, err := a.httpClient.Do(request)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	if response.StatusCode != 200 {
-		responseBody, _ := io.ReadAll(response.Body)
-		var errorResponse ErrorResponse
-		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
-			return err
-		}
-		return &errorResponse.Error
-	}
-
-	reader := bufio.NewReader(response.Body)
-
-	for {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-
-		default:
-			m, err := reader.ReadString('\n')
-			if err == io.EOF {
-				return nil
-			} else if err != nil {
-				return err
-			}
-
-			// remove prefix 'data: ' and suffix '\n'
-			m = strings.TrimPrefix(m, "data: ")
-			m = strings.TrimSuffix(m, "\n")
-			if m == "" {
-				// stream is delimited by '\n\n'
-				continue
-			} else if m == "[DONE]" {
-				// stream is terminated by a `data: [DONE]` message
-				return nil
-			}
-
-			var chatResponse ChatResponse
-			if err := json.Unmarshal([]byte(m), &chatResponse); err != nil {
-				return err
-			}
-			if err := consumer(chatResponse); err != nil {
-				return err
-			}
-		}
-	}
+	return postJsonRequestStream[ChatRequest, ChatResponse](ctx, a.httpClient, endpoint, a.header(), chatRequest, consumer)
 }
 
 func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, endpoint string, header http.Header, request S) (*T, error) {
@@ -241,5 +128,67 @@ func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, end
 			return nil, err
 		}
 		return &response, nil
+	}
+}
+
+// postJsonRequestStream
+// https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference
+// Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become
+// available, with the stream terminated by a `data: [DONE]` message.
+func postJsonRequestStream[S, T any](ctx context.Context, httpClient *http.Client, endpoint string, header http.Header, chatRequest S, consumer func(response T) error) error {
+
+	requestBody, _ := json.Marshal(chatRequest)
+	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	request.Header = header
+
+	response, err := httpClient.Do(request)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		responseBody, _ := io.ReadAll(response.Body)
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
+			return err
+		}
+		return &errorResponse.Error
+	}
+
+	reader := bufio.NewReader(response.Body)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+
+		default:
+			m, err := reader.ReadString('\n')
+			if err == io.EOF {
+				return nil
+			} else if err != nil {
+				return err
+			}
+
+			// remove prefix 'data: ' and suffix '\n'
+			m = strings.TrimPrefix(m, "data: ")
+			m = strings.TrimSuffix(m, "\n")
+			if m == "" {
+				// stream is delimited by '\n\n'
+				continue
+			} else if m == "[DONE]" {
+				// stream is terminated by a `data: [DONE]` message
+				return nil
+			}
+
+			var chunk T
+			if err := json.Unmarshal([]byte(m), &chunk); err != nil {
+				return err
+			}
+			if err := consumer(chunk); err != nil {
+				return err
+			}
+		}
 	}
 }
