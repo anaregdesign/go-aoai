@@ -96,7 +96,7 @@ response, err := client.Completion(ctx, request)
 func (a *AzureOpenAI) CompletionStream(ctx context.Context, request CompletionRequest, consumer func(CompletionResponse) error) error
 ```
 `CompletionStream` is a streaming api of `Completion`
-If a field `CompletionRequest.Stream` is `true`, it will return a stream of responses with response header `Content-Type', 'text/event-stream'`.
+If a field `CompletionRequest.Stream` is `true`, it will return a stream of responses with response header `Content-Type: text/event-stream'`.
 We can process each chunk of response with `consumer` function.
 
 #### Usecase
@@ -155,7 +155,7 @@ response, err := client.ChatCompletion(ctx, request)
 func (a *AzureOpenAI) ChatCompletionStream(ctx context.Context, request ChatRequest, consumer func(ChatResponse) error) error
 ```
 `ChatCompletionStream` is a streaming api of `ChatCompletion`
-If a field `ChatRequest.Stream` is `true`, it will return a stream of responses with response header `Content-Type', 'text/event-stream'`.
+If a field `ChatRequest.Stream` is `true`, it will return a stream of responses with response header `Content-Type: text/event-stream'`.
 We can process each chunk of response with `consumer` function as same as `CompletionStream`.
 
 #### Usecase
