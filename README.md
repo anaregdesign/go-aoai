@@ -138,7 +138,7 @@ func (a *AzureOpenAI) ChatCompletion(ctx context.Context, request ChatRequest) (
 #### Usecase
 ```go
 request := ChatRequest{
-    Prompt:    "I have a dream that one day on",
+    Prompt:    "What is Azure OpenAI?",
     MaxTokens: 100,
     Stream:    false,
 }
@@ -157,7 +157,7 @@ We can process each chunk of response with `consumer` function as same as `Compl
 #### Usecase
 ```go
 request := ChatRequest{
-    Prompt:    "I have a dream that one day on",
+    Prompt:    "What is Azure OpenAI?",
     MaxTokens: 100,
     Stream:    true,
 }
