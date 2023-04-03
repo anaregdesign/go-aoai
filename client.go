@@ -135,7 +135,7 @@ func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, end
 // https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference
 // Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become
 // available, with the stream terminated by a `data: [DONE]` message.
-func postJsonRequestStream[S, T any](ctx context.Context, httpClient *http.Client, endpoint string, header http.Header, request S, consumer func(response T) error) error {
+func postJsonRequestStream[S, T any](ctx context.Context, httpClient *http.Client, endpoint string, header http.Header, request S, consumer func(chunk T) error) error {
 
 	requestBody, _ := json.Marshal(request)
 	httpRequest, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
