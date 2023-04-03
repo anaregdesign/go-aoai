@@ -71,9 +71,108 @@ Then we got belows.
 }
 ```
 
+## APIs
+
+### Completion
+```go
+func (c *AzureOpenAI) Completion(ctx context.Context, request CompletionRequest) (*CompletionResponse, error)
+```
+
+Simple text completion api. If you pass some incomplete text, it will guess the rest of the text.
+
+#### Usecase 
+```go
+request := CompletionRequest{
+    Prompts:   []string{"I have a dream that one day on"},
+    MaxTokens: 100,
+    Stream:    false,
+}
+
+response, err := client.Completion(ctx, request)
+```
+
+### CompletionStream
+```go
+func (a *AzureOpenAI) CompletionStream(ctx context.Context, request CompletionRequest, consumer func(CompletionResponse) error) error
+```
+`CompletionStream` is a streaming api of `Completion`
+If a field `CompletionRequest.Stream` is `true`, it will return a stream of responses with response header `Content-Type', 'text/event-stream'`.
+We can process each chunk of response with `consumer` function.
+
+#### Usecase
+```go
+request := CompletionRequest{
+    Prompts:   []string{"I have a dream that one day on"},
+    MaxTokens: 100,
+    Stream:    true,
+}
+
+response, err := client.CompletionStream(ctx, request, func(response CompletionResponse) error {
+    fmt.Println(response)
+    return nil
+})
+```
+
+### Embedding
+```go
+func (c *AzureOpenAI) Embedding(ctx context.Context, request EmbeddingRequest) (*EmbeddingResponse, error)
+```
+`Embedding` api returns a vector representation of the input text, and the vector is used to calculate the similarity between texts.
+
+#### Usecase
+```go
+request := EmbeddingRequest{
+    Prompts: []string{"I have a dream that one day on"},
+}
+
+response, err := client.Embedding(ctx, request)
+```
+
+
+### ChatCompletion
+```go
+func (a *AzureOpenAI) ChatCompletion(ctx context.Context, request ChatRequest) (*ChatResponse, error)
+```
+`ChatCompletion` api is a chatbot api. It can be used to generate a response to a given prompt.
+
+#### Usecase
+```go
+request := ChatRequest{
+    Prompt:    "I have a dream that one day on",
+    MaxTokens: 100,
+    Stream:    false,
+}
+
+response, err := client.ChatCompletion(ctx, request)
+```
+
+### ChatCompletionStream
+```go
+func (a *AzureOpenAI) ChatCompletionStream(ctx context.Context, request ChatRequest, consumer func(ChatResponse) error) error
+```
+`ChatCompletionStream` is a streaming api of `ChatCompletion`
+If a field `ChatRequest.Stream` is `true`, it will return a stream of responses with response header `Content-Type', 'text/event-stream'`.
+We can process each chunk of response with `consumer` function as same as `CompletionStream`.
+
+#### Usecase
+```go
+request := ChatRequest{
+    Prompt:    "I have a dream that one day on",
+    MaxTokens: 100,
+    Stream:    true,
+}
+
+response, err := client.ChatCompletionStream(ctx, request, func(response ChatResponse) error {
+    fmt.Println(response)
+    return nil
+})
+```
+
+
 ## Global Parameters
 
 This SDK requires some parameters to identify your project and deployment.
+
 | name | description |
 | :--- | :--- |
 | `resourceName` | Name of Azure OpenAI resource |
