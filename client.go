@@ -58,47 +58,47 @@ func (a *AzureOpenAI) header() http.Header {
 	return header
 }
 
-func (a *AzureOpenAI) Completion(ctx context.Context, completionRequest CompletionRequest) (*CompletionResponse, error) {
-	if completionRequest.Stream {
+func (a *AzureOpenAI) Completion(ctx context.Context, request CompletionRequest) (*CompletionResponse, error) {
+	if request.Stream {
 		return nil, fmt.Errorf("streaming is not supported. Try `CompletionStream` instead")
 	}
 
 	endpoint := fmt.Sprintf("%s/completions?api-version=%s", a.endpoint(), a.apiVersion)
-	return postJsonRequest[CompletionRequest, CompletionResponse](ctx, a.httpClient, endpoint, a.header(), completionRequest)
+	return postJsonRequest[CompletionRequest, CompletionResponse](ctx, a.httpClient, endpoint, a.header(), request)
 
 }
 
-func (a *AzureOpenAI) Embedding(ctx context.Context, embeddingRequest EmbeddingRequest) (*EmbeddingResponse, error) {
+func (a *AzureOpenAI) Embedding(ctx context.Context, request EmbeddingRequest) (*EmbeddingResponse, error) {
 	endpoint := fmt.Sprintf("%s/embeddings?api-version=%s", a.endpoint(), a.apiVersion)
-	return postJsonRequest[EmbeddingRequest, EmbeddingResponse](ctx, a.httpClient, endpoint, a.header(), embeddingRequest)
+	return postJsonRequest[EmbeddingRequest, EmbeddingResponse](ctx, a.httpClient, endpoint, a.header(), request)
 }
 
-func (a *AzureOpenAI) ChatCompletion(ctx context.Context, chatRequest ChatRequest) (*ChatResponse, error) {
-	if chatRequest.Stream {
+func (a *AzureOpenAI) ChatCompletion(ctx context.Context, request ChatRequest) (*ChatResponse, error) {
+	if request.Stream {
 		return nil, fmt.Errorf("streaming is not supported. Try `ChatCompletionStream` instead")
 	}
 
 	endpoint := fmt.Sprintf("%s/chat/completions?api-version=%s", a.endpoint(), a.apiVersion)
-	return postJsonRequest[ChatRequest, ChatResponse](ctx, a.httpClient, endpoint, a.header(), chatRequest)
+	return postJsonRequest[ChatRequest, ChatResponse](ctx, a.httpClient, endpoint, a.header(), request)
 }
 
-func (a *AzureOpenAI) CompletionStream(ctx context.Context, completionRequest CompletionRequest, consumer func(completionResponse CompletionResponse) error) error {
-	if !completionRequest.Stream {
+func (a *AzureOpenAI) CompletionStream(ctx context.Context, request CompletionRequest, consumer func(CompletionResponse) error) error {
+	if !request.Stream {
 		return fmt.Errorf("streaming is not enabled. Try `Completion` instead")
 	}
 
 	endpoint := fmt.Sprintf("%s/completions?api-version=%s", a.endpoint(), a.apiVersion)
-	return postJsonRequestStream[CompletionRequest, CompletionResponse](ctx, a.httpClient, endpoint, a.header(), completionRequest, consumer)
+	return postJsonRequestStream[CompletionRequest, CompletionResponse](ctx, a.httpClient, endpoint, a.header(), request, consumer)
 }
 
 // ChatCompletionStream
 
-func (a *AzureOpenAI) ChatCompletionStream(ctx context.Context, chatRequest ChatRequest, consumer func(chatResponse ChatResponse) error) error {
-	if !chatRequest.Stream {
+func (a *AzureOpenAI) ChatCompletionStream(ctx context.Context, request ChatRequest, consumer func(ChatResponse) error) error {
+	if !request.Stream {
 		return fmt.Errorf("streaming is not enabled. Try `ChatCompletion` instead")
 	}
 	endpoint := fmt.Sprintf("%s/chat/completions?api-version=%s", a.endpoint(), a.apiVersion)
-	return postJsonRequestStream[ChatRequest, ChatResponse](ctx, a.httpClient, endpoint, a.header(), chatRequest, consumer)
+	return postJsonRequestStream[ChatRequest, ChatResponse](ctx, a.httpClient, endpoint, a.header(), request, consumer)
 }
 
 func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, endpoint string, header http.Header, request S) (*T, error) {
