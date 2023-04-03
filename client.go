@@ -64,60 +64,13 @@ func (a *AzureOpenAI) Completion(ctx context.Context, completionRequest Completi
 	}
 
 	endpoint := fmt.Sprintf("%s/completions?api-version=%s", a.endpoint(), a.apiVersion)
+	return postJsonRequest[CompletionRequest, CompletionResponse](ctx, a.httpClient, endpoint, a.header(), completionRequest)
 
-	requestBody, _ := json.Marshal(completionRequest)
-	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
-	request.Header = a.header()
-
-	response, err := a.httpClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	responseBody, _ := io.ReadAll(response.Body)
-	if response.StatusCode != 200 {
-		var errorResponse ErrorResponse
-		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
-			return nil, err
-		}
-		return nil, &errorResponse.Error
-	} else {
-		var completionResponse CompletionResponse
-		if err := json.Unmarshal(responseBody, &completionResponse); err != nil {
-			return nil, err
-		}
-		return &completionResponse, nil
-	}
 }
 
 func (a *AzureOpenAI) Embedding(ctx context.Context, embeddingRequest EmbeddingRequest) (*EmbeddingResponse, error) {
 	endpoint := fmt.Sprintf("%s/embeddings?api-version=%s", a.endpoint(), a.apiVersion)
-
-	requestBody, _ := json.Marshal(embeddingRequest)
-	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
-	request.Header = a.header()
-
-	response, err := a.httpClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	responseBody, _ := io.ReadAll(response.Body)
-	if response.StatusCode != 200 {
-		var errorResponse ErrorResponse
-		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
-			return nil, err
-		}
-		return nil, &errorResponse.Error
-	} else {
-		var embeddingResponse EmbeddingResponse
-		if err := json.Unmarshal(responseBody, &embeddingResponse); err != nil {
-			return nil, err
-		}
-		return &embeddingResponse, nil
-	}
+	return postJsonRequest[EmbeddingRequest, EmbeddingResponse](ctx, a.httpClient, endpoint, a.header(), embeddingRequest)
 }
 
 func (a *AzureOpenAI) ChatCompletion(ctx context.Context, chatRequest ChatRequest) (*ChatResponse, error) {
@@ -126,31 +79,7 @@ func (a *AzureOpenAI) ChatCompletion(ctx context.Context, chatRequest ChatReques
 	}
 
 	endpoint := fmt.Sprintf("%s/chat/completions?api-version=%s", a.endpoint(), a.apiVersion)
-
-	requestBody, _ := json.Marshal(chatRequest)
-	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
-	request.Header = a.header()
-
-	response, err := a.httpClient.Do(request)
-	if err != nil {
-		return nil, err
-	}
-	defer response.Body.Close()
-
-	responseBody, _ := io.ReadAll(response.Body)
-	if response.StatusCode != 200 {
-		var errorResponse ErrorResponse
-		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
-			return nil, err
-		}
-		return nil, &errorResponse.Error
-	} else {
-		var chatResponse ChatResponse
-		if err := json.Unmarshal(responseBody, &chatResponse); err != nil {
-			return nil, err
-		}
-		return &chatResponse, nil
-	}
+	return postJsonRequest[ChatRequest, ChatResponse](ctx, a.httpClient, endpoint, a.header(), chatRequest)
 }
 
 // CompletionStream
@@ -282,5 +211,35 @@ func (a *AzureOpenAI) ChatCompletionStream(ctx context.Context, chatRequest Chat
 				return err
 			}
 		}
+	}
+}
+
+func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, endpoint string, header http.Header, request S) (*T, error) {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+	req, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	req.Header = header
+
+	response, err := httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	responseBody, _ := io.ReadAll(response.Body)
+	if response.StatusCode != 200 {
+		var errorResponse ErrorResponse
+		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
+			return nil, err
+		}
+		return nil, &errorResponse.Error
+	} else {
+		var response T
+		if err := json.Unmarshal(responseBody, &response); err != nil {
+			return nil, err
+		}
+		return &response, nil
 	}
 }
