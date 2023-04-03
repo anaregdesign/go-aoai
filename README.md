@@ -138,9 +138,13 @@ func (a *AzureOpenAI) ChatCompletion(ctx context.Context, request ChatRequest) (
 #### Usecase
 ```go
 request := ChatRequest{
-    Prompt:    "What is Azure OpenAI?",
-    MaxTokens: 100,
-    Stream:    false,
+	Messages: []ChatMessage{
+		{
+			Role:    "user",
+			Content: "What is Azure OpenAI?",
+		},
+	},
+	MaxTokens: 100,
 }
 
 response, err := client.ChatCompletion(ctx, request)
@@ -157,9 +161,13 @@ We can process each chunk of response with `consumer` function as same as `Compl
 #### Usecase
 ```go
 request := ChatRequest{
-    Prompt:    "What is Azure OpenAI?",
-    MaxTokens: 100,
-    Stream:    true,
+	Messages: []ChatMessage{
+		{
+			Role:    "user",
+			Content: "What is Azure OpenAI?",
+		},
+	},
+	MaxTokens: 100,
 }
 
 response, err := client.ChatCompletionStream(ctx, request, func(response ChatResponse) error {
