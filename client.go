@@ -106,17 +106,17 @@ func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, end
 	if err != nil {
 		return nil, err
 	}
-	req, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
-	req.Header = header
+	httpRequest, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	httpRequest.Header = header
 
-	response, err := httpClient.Do(req)
+	httpResponse, err := httpClient.Do(httpRequest)
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	defer httpResponse.Body.Close()
 
-	responseBody, _ := io.ReadAll(response.Body)
-	if response.StatusCode != 200 {
+	responseBody, _ := io.ReadAll(httpResponse.Body)
+	if httpResponse.StatusCode != 200 {
 		var errorResponse ErrorResponse
 		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
 			return nil, err
@@ -135,20 +135,20 @@ func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, end
 // https://learn.microsoft.com/en-us/azure/cognitive-services/openai/reference
 // Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become
 // available, with the stream terminated by a `data: [DONE]` message.
-func postJsonRequestStream[S, T any](ctx context.Context, httpClient *http.Client, endpoint string, header http.Header, chatRequest S, consumer func(response T) error) error {
+func postJsonRequestStream[S, T any](ctx context.Context, httpClient *http.Client, endpoint string, header http.Header, request S, consumer func(response T) error) error {
 
-	requestBody, _ := json.Marshal(chatRequest)
-	request, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
-	request.Header = header
+	requestBody, _ := json.Marshal(request)
+	httpRequest, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	httpRequest.Header = header
 
-	response, err := httpClient.Do(request)
+	httpResponse, err := httpClient.Do(httpRequest)
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
+	defer httpResponse.Body.Close()
 
-	if response.StatusCode != 200 {
-		responseBody, _ := io.ReadAll(response.Body)
+	if httpResponse.StatusCode != 200 {
+		responseBody, _ := io.ReadAll(httpResponse.Body)
 		var errorResponse ErrorResponse
 		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
 			return err
@@ -156,7 +156,7 @@ func postJsonRequestStream[S, T any](ctx context.Context, httpClient *http.Clien
 		return &errorResponse.Error
 	}
 
-	reader := bufio.NewReader(response.Body)
+	reader := bufio.NewReader(httpResponse.Body)
 
 	for {
 		select {
