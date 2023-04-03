@@ -168,6 +168,7 @@ request := ChatRequest{
 		},
 	},
 	MaxTokens: 100,
+	Stream:    true,
 }
 
 response, err := client.ChatCompletionStream(ctx, request, func(chunk ChatResponse) error {
