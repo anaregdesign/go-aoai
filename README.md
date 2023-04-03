@@ -107,8 +107,8 @@ request := CompletionRequest{
     Stream:    true,
 }
 
-response, err := client.CompletionStream(ctx, request, func(response CompletionResponse) error {
-    fmt.Println(response)
+response, err := client.CompletionStream(ctx, request, func(chunk CompletionResponse) error {
+    fmt.Println(chunk)
     return nil
 })
 ```
@@ -170,8 +170,8 @@ request := ChatRequest{
 	MaxTokens: 100,
 }
 
-response, err := client.ChatCompletionStream(ctx, request, func(response ChatResponse) error {
-    fmt.Println(response)
+response, err := client.ChatCompletionStream(ctx, request, func(chunk ChatResponse) error {
+    fmt.Println(chunk)
     return nil
 })
 ```
