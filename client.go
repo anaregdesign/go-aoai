@@ -106,7 +106,11 @@ func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, end
 	if err != nil {
 		return nil, err
 	}
-	httpRequest, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+
+	httpRequest, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	if err != nil {
+		return nil, err
+	}
 	httpRequest.Header = header
 
 	httpResponse, err := httpClient.Do(httpRequest)
@@ -115,20 +119,24 @@ func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, end
 	}
 	defer httpResponse.Body.Close()
 
-	responseBody, _ := io.ReadAll(httpResponse.Body)
+	responseBody, err := io.ReadAll(httpResponse.Body)
+	if err != nil {
+		return nil, err
+	}
+
 	if httpResponse.StatusCode != 200 {
 		var errorResponse ErrorResponse
 		if err := json.Unmarshal(responseBody, &errorResponse); err != nil {
 			return nil, err
 		}
 		return nil, &errorResponse.Error
-	} else {
-		var response T
-		if err := json.Unmarshal(responseBody, &response); err != nil {
-			return nil, err
-		}
-		return &response, nil
 	}
+
+	var response T
+	if err := json.Unmarshal(responseBody, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
 
 // postJsonRequestStream
@@ -136,9 +144,15 @@ func postJsonRequest[S, T any](ctx context.Context, httpClient *http.Client, end
 // Whether to stream back partial progress. If set, tokens will be sent as data-only server-sent events as they become
 // available, with the stream terminated by a `data: [DONE]` message.
 func postJsonRequestStream[S, T any](ctx context.Context, httpClient *http.Client, endpoint string, header http.Header, request S, consumer func(chunk T) error) error {
+	requestBody, err := json.Marshal(request)
+	if err != nil {
+		return err
+	}
 
-	requestBody, _ := json.Marshal(request)
-	httpRequest, _ := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	httpRequest, err := http.NewRequestWithContext(ctx, "POST", endpoint, bytes.NewReader(requestBody))
+	if err != nil {
+		return err
+	}
 	httpRequest.Header = header
 
 	httpResponse, err := httpClient.Do(httpRequest)
