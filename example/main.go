@@ -14,7 +14,7 @@ func main() {
 
 	resourceName := "example-aoai-02"
 	deploymentName := "gpt-35-turbo-0301"
-	apiVersion := "2023-03-15-preview"
+	apiVersion := "2023-05-15"
 	accessToken := os.Getenv("AZURE_OPENAI_API_KEY")
 
 	client := aoai.New(resourceName, deploymentName, apiVersion, accessToken)
