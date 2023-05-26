@@ -1,3 +1,3 @@
-module github.com/piroyoung/go-aoai
+module github.com/anaregdesign/go-aoai
 
 go 1.20
