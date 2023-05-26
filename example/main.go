@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	aoai "github.com/piroyoung/go-aoai"
+	aoai "github.com/anaregdesign/go-aoai"
 
 	"os"
 )

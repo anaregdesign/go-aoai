@@ -8,7 +8,7 @@ for [Azure OpenAI](https://azure.microsoft.com/en-us/products/cognitive-services
 Just type this script on your project.
 
 ```shell
-$ go get github.com/piroyoung/go-aoai
+$ go get github.com/anaregdesign/go-aoai
 ```
 
 ## Example Usage
